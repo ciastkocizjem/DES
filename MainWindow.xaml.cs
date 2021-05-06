@@ -23,6 +23,8 @@ namespace DES
         public MainWindow()
         {
             InitializeComponent();
+
+            DES_Algorithm.Encoding("0123456789ABCDEF", "133457799BBCDFF1");
         }
     }
 }
