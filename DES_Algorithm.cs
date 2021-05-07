@@ -8,7 +8,7 @@ namespace DES
 {
     public static class DES_Algorithm
     {
-        #region Tables
+        #region Arrays
         private static readonly int[] PC_1 = {57, 49, 41, 33, 25, 17, 9,
                                                 1, 58, 50, 42, 34, 26, 18,
                                                 10, 2, 59, 51, 43, 35, 27,
@@ -99,17 +99,20 @@ namespace DES
         #endregion
 
         #region Utilities
+        // Converts string to int array
         private static int[] ToArray(string s)
         {
             int[] ints = s.ToCharArray().Where(x => int.TryParse(x.ToString(), out int myInt)).Select(x => int.Parse(x.ToString())).ToArray();
             return ints;
         }
 
+        // Converts array to string 
         private static string FromArrayToString(int[] array)
         {
             return string.Join("", array);
         }
 
+        // Shifts bits to the left one or two times depending on leftShift array
         private static int[] ShiftToLeft(int[] toShift, int shiftCount)
         {
             int[] shifted = new int[toShift.Length];
@@ -135,32 +138,83 @@ namespace DES
             return shifted;
         }
 
+        // Converts hexadecimal text to binary and fills to 4 bits
+        private static string HexToBin4Bit(string hexadecimal)
+        {
+            string binary = "";
+            foreach (char c in hexadecimal)
+            {
+                binary += Convert.ToString(Convert.ToInt32(c.ToString(), 16), 2).PadLeft(4, '0');
+            }
+            return binary;
+        }
+
+        // Returns permutated array with specified size based on array with permutation rule
+        private static int[] Permute(int[] toPermute, int[] permutationRule, int outputSize)
+        {
+            int[] output = new int[outputSize];
+            for (int i = 0; i < outputSize; i++)
+            {
+                output[i] = toPermute[permutationRule[i] - 1];
+            }
+            return output;
+        }
+
+        // Converts binary string to decimal integer
+        private static int BinToDec(string binary)
+        {
+            return Convert.ToInt32(binary, 2);
+        }
+
+        // Converts decimal value to binary text written on 4 bits
+        private static string DecToBin4Bit(int decimalValue)
+        {
+            return Convert.ToString(decimalValue, 2).PadLeft(4, '0');
+        }
+
+        // Return decimal value at given row and column from array S1-S8 based on packageIndex
+        private static int GetValueFromSNArray(int packageIndex, int rowIndex, int columnIndex)
+        {
+            int valueDecimal = 0;
+            switch (packageIndex)
+            {
+                case 0:
+                    valueDecimal = S1[rowIndex, columnIndex];
+                    break;
+                case 1:
+                    valueDecimal = S2[rowIndex, columnIndex];
+                    break;
+                case 2:
+                    valueDecimal = S3[rowIndex, columnIndex];
+                    break;
+                case 3:
+                    valueDecimal = S4[rowIndex, columnIndex];
+                    break;
+                case 4:
+                    valueDecimal = S5[rowIndex, columnIndex];
+                    break;
+                case 5:
+                    valueDecimal = S6[rowIndex, columnIndex];
+                    break;
+                case 6:
+                    valueDecimal = S7[rowIndex, columnIndex];
+                    break;
+                case 7:
+                    valueDecimal = S8[rowIndex, columnIndex];
+                    break;
+            }
+            return valueDecimal;
+        }
+
         #endregion
 
         public static string Encoding(string message, string key)
         {
-            // Convert hexadecimal input to binary 
-            string binaryMsg = "", binaryKy = "";
-            foreach(char c in message)
-            {
-                binaryMsg += Convert.ToString(Convert.ToInt32(c.ToString(), 16), 2).PadLeft(4, '0');
-            }
+            // Convert hexadecimal string input to binary int array
+            int[] binaryMessage = ToArray(HexToBin4Bit(message)), // M
+                binaryKey = ToArray(HexToBin4Bit(key)); // K
 
-            foreach(char c in key)
-            {
-                binaryKy += Convert.ToString(Convert.ToInt32(c.ToString(), 16), 2).PadLeft(4, '0');
-            }
-
-            int[] binaryMessage = ToArray(binaryMsg), // M
-                binaryKey = ToArray(binaryKy); // K
-
-            // Create 56-bit long key
-            int[] key56B = new int[56]; // 56-bit long permutated key (K+)
-
-            for(int i = 0; i < key56B.Length; i++)
-            {
-                key56B[i] = binaryKey[PC_1[i] - 1];
-            }
+            int[] key56B = Permute(binaryKey, PC_1, 56); // 56-bit long permutated key (K+)
 
             // Split 56-bit key into two 28-bit arrays
             int[] C = new int[28], 
@@ -178,21 +232,12 @@ namespace DES
                 D = ShiftToLeft(D, leftShift[i]);
 
                 CD = C.Concat(D).ToArray();
-                int[] CD48B = new int[48];
-                for (int j = 0; j < CD48B.Length; j++)
-                {
-                    CD48B[j] = CD[PC_2[j] - 1];
-                }
+                int[] CD48B = Permute(CD, PC_2, 48);    // 48-bit
 
                 joinedPermutatedKeys.Add(CD48B);
             }
 
-            // Permuting message
-            int[] messageIP = new int[64];
-            for (int i = 0; i < messageIP.Length; i++)
-            {
-                messageIP[i] = binaryMessage[IP[i] - 1];
-            }
+            int[] messageIP = Permute(binaryMessage, IP, 64);  // 64-bit long permutated message 
 
             // Splitting message into two 32-bit arrays
             int[] Lprev = new int[32],  // Ln-1 (initially L0)
@@ -207,11 +252,8 @@ namespace DES
                 int[] L = new int[32], R = new int[32], xored = new int[48]; // Kn+E(Rn-1)
                 L = Rprev;
 
-                // Computing E(Rn-1)
-                for (int j = 0; j < E.Length; j++)
-                {
-                    E[j] = L[EBit_Selection[j] - 1];
-                }
+                // Computing (permuting?) E(Rn-1)
+                E = Permute(L, EBit_Selection, 48);
 
                 // Xoring E(Rn-1) with Kn
                 for (int j = 0; j < E.Length; j++)
@@ -219,8 +261,8 @@ namespace DES
                     xored[j] = E[j] ^ joinedPermutatedKeys.ElementAt(i)[j];
                 }
 
-                int packageIndex = 0, valueDecimal = 0;
-                string valueBinary = "", sString = "";
+                int packageIndex = 0, valueDecimal;
+                string valueBinary, sString = "";
                 int[] S = new int[32]; // xored after converting based on Sn tables
                 // Converting 48-bit xored to 32-bit
                 for (int j = 0; j < xored.Length; j+=6)
@@ -229,38 +271,14 @@ namespace DES
                     string rowIndexBin = xored[j].ToString() + xored[j + 5].ToString(), 
                         columnIndexBin = FromArrayToString(xored.Skip(j + 1).Take(4).ToArray());
                     // Converting indexes to decimal
-                    int rowIndex = Convert.ToInt32(rowIndexBin, 2), 
-                        columnIndex = Convert.ToInt32(columnIndexBin, 2);
+                    int rowIndex = BinToDec(rowIndexBin), 
+                        columnIndex = BinToDec(columnIndexBin);
 
-                    // Selecting approprate array
-                    switch (packageIndex)
-                    {
-                        case 0:
-                            valueDecimal = S1[rowIndex, columnIndex];
-                            break;
-                        case 1:
-                            valueDecimal = S2[rowIndex, columnIndex];
-                            break;
-                        case 2:
-                            valueDecimal = S3[rowIndex, columnIndex];
-                            break;
-                        case 3:
-                            valueDecimal = S4[rowIndex, columnIndex];
-                            break;
-                        case 4:
-                            valueDecimal = S5[rowIndex, columnIndex];
-                            break;
-                        case 5:
-                            valueDecimal = S6[rowIndex, columnIndex];
-                            break;
-                        case 6:
-                            valueDecimal = S7[rowIndex, columnIndex];
-                            break;
-                        case 7:
-                            valueDecimal = S8[rowIndex, columnIndex];
-                            break;
-                    }
-                    valueBinary = Convert.ToString(valueDecimal, 2).PadLeft(4, '0');
+                    // Selecting approprate value from approprate array
+                    valueDecimal = GetValueFromSNArray(packageIndex, rowIndex, columnIndex);
+                    
+                    // Convering value to binary
+                    valueBinary = DecToBin4Bit(valueDecimal);
                     sString += valueBinary;
                     packageIndex++;
                     valueBinary = "";
