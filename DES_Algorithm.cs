@@ -206,6 +206,16 @@ namespace DES
             return valueDecimal;
         }
 
+        // Splits source array into to even arrays
+        private static void SplitArray(int[] sourceArray, out int[] firstArray, out int[] secondArray)
+        {
+            int halfOfSize = sourceArray.Length / 2;
+            firstArray = new int[halfOfSize];
+            secondArray = new int[halfOfSize];
+            Array.Copy(sourceArray, 0, firstArray, 0, halfOfSize);
+            Array.Copy(sourceArray, halfOfSize, secondArray, 0, halfOfSize);
+        }
+
         #endregion
 
         public static string Encoding(string message, string key)
@@ -220,8 +230,7 @@ namespace DES
             int[] C = new int[28], 
                 D = new int[28], 
                 CD = new int[56];
-            Array.Copy(key56B, 0, C, 0, 28);
-            Array.Copy(key56B, 28, D, 0, 28);
+            SplitArray(key56B, out C, out D);
 
             List<int[]> joinedPermutatedKeys = new List<int[]>(); // List of combined C and D permuted with PC_2 (Kn)
 
@@ -242,9 +251,7 @@ namespace DES
             // Splitting message into two 32-bit arrays
             int[] Lprev = new int[32],  // Ln-1 (initially L0)
                 Rprev = new int[32];    // Rn-1 (initially R0)
-                
-            Array.Copy(messageIP, 0, Lprev, 0, 32);
-            Array.Copy(messageIP, 32, Rprev, 0, 32);
+            SplitArray(messageIP, out Lprev, out Rprev);
 
             int[] E = new int[48]; // E(Rn-1)
             for (int i = 0; i < 16; i++)
