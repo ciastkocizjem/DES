@@ -5,8 +5,32 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DES"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow"  Width="400" SizeToContent="Height">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <Label Content="Input" Grid.Row="0" Grid.Column="0" Margin="5" Padding="5"/>
+        <TextBox Grid.Row="0" Grid.Column="1" Name="inputTextBox" Margin="5" Padding="5"/>
+        <Button Content="Load" Grid.Column="2" Grid.Row="0" Name="loadButton" Margin="5" Padding="5"/>
+
+        <Label Content="Key" Grid.Row="1" Grid.Column="0" Margin="5" Padding="5"/>
+        <TextBox Grid.Row="1" Grid.Column="1" Name="keyTextBox" Margin="5" Padding="5"/>
+
+        <Button Content="Decrypt" Grid.Column="1" Grid.Row="2" Name="decryptButton" Margin="5" Padding="5" HorizontalAlignment="Right"/>
+        <Button Content="Encrypt" Grid.Column="2" Grid.Row="2" Name="encryptButton" Margin="5" Padding="5"/>
+
+        <Label Content="Output" Grid.Row="3" Grid.Column="0" Margin="5" Padding="5"/>
+        <TextBox Grid.Row="3" Grid.Column="1" Name="outputTextBox" Margin="5" Padding="5"/>
         
     </Grid>
 </Window>
