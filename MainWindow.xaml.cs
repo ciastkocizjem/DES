@@ -33,7 +33,7 @@ namespace DES
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
-                Filter = "Bin files (*.bin)|*.bin"
+                Filter = "Binary files (*.bin)|*.bin"
             };
             if (openFileDialog.ShowDialog() == true) inputTextBox.Text = File.ReadAllText(openFileDialog.FileName);
         }
