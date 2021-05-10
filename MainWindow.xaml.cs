@@ -27,6 +27,7 @@ namespace DES
             InitializeComponent();
 
             DES_Algorithm.Encoding("AAAAAAAAAAAAAAAB", "1111111111111111");
+            DES_Algorithm.Decoding("BC3E28BB3BB99565", "1111111111111111");
         }
 
         private void LoadButton_Click(object sender, RoutedEventArgs e)

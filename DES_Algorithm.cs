@@ -329,5 +329,111 @@ namespace DES
 
             return hexEncriptedM;
         }
+
+        public static string Decoding(string message, string key)
+        {
+            // Convert hexadecimal string input to binary int array
+            int[] binaryMessage = new int[64],
+                binaryKey = new int[64];
+
+            binaryMessage = ToArray(HexToBin4Bit(message)); // M
+            binaryKey = ToArray(HexToBin4Bit(key)); // K
+
+            //// Fill array with bits 
+            //if (binaryMessage.Length < 64)
+            //{
+            //    binaryMessage = binaryMessage.Append(1).ToArray();
+            //    while (binaryMessage.Length != 64)
+            //    {
+            //        binaryMessage = binaryMessage.Append(0).ToArray();
+            //    }
+            //}
+
+            //if (binaryKey.Length < 64)
+            //    return null;
+
+            int[] key56B = Permute(binaryKey, PC_1, 56); // 56-bit long permutated key (K+)
+
+            // Split 56-bit key into two 28-bit arrays
+            int[] C = new int[28],
+                D = new int[28],
+                CD = new int[56];
+            SplitArray(key56B, out C, out D);
+
+            List<int[]> joinedPermutatedKeys = new List<int[]>(); // List of combined C and D permuted with PC_2 (Kn)
+
+            // Shifting C and D, joining them and permuting 
+            for (int i = 0; i < 16; i++)
+            {
+                C = ShiftToLeft(C, leftShift[i]);
+                D = ShiftToLeft(D, leftShift[i]);
+
+                CD = C.Concat(D).ToArray();
+                int[] CD48B = Permute(CD, PC_2, 48);    // 48-bit
+
+                joinedPermutatedKeys.Add(CD48B);
+            }
+
+            int[] messageIP = Permute(binaryMessage, IP, 64);  // 64-bit long permutated message 
+
+            // Splitting message into two 32-bit arrays
+            int[] Lprev = new int[32],  // Ln-1 (initially L0)
+                Rprev = new int[32];    // Rn-1 (initially R0)
+            SplitArray(messageIP, out Lprev, out Rprev);
+
+            int[] E = new int[48]; // E(Rn-1)
+            for (int i = 15; i >= 0; i--)
+            {
+                int[] L = new int[32], R = new int[32], xored = new int[48]; // Kn+E(Rn-1)
+                L = Rprev;
+
+                // Computing (permuting?) E(Rn-1)
+                E = Permute(L, EBit_Selection, 48);
+
+                // Xoring E(Rn-1) with Kn
+                for (int j = 0; j < E.Length; j++)
+                {
+                    xored[j] = E[j] ^ joinedPermutatedKeys.ElementAt(i)[j];
+                }
+
+                int packageIndex = 0, valueDecimal;
+                string valueBinary, sString = "";
+                int[] S = new int[32]; // xored after converting based on Sn tables
+                // Converting 48-bit xored to 32-bit
+                for (int j = 0; j < xored.Length; j += 6)
+                {
+                    // Getting row and column index in binary from package of 6 bits
+                    string rowIndexBin = xored[j].ToString() + xored[j + 5].ToString(),
+                        columnIndexBin = FromArrayToString(xored.Skip(j + 1).Take(4).ToArray());
+                    // Converting indexes to decimal
+                    int rowIndex = BinToDec(rowIndexBin),
+                        columnIndex = BinToDec(columnIndexBin);
+
+                    // Selecting approprate value from approprate array
+                    valueDecimal = GetValueFromSNArray(packageIndex, rowIndex, columnIndex);
+
+                    // Convering value to binary
+                    valueBinary = DecToBin4Bit(valueDecimal);
+                    sString += valueBinary;
+                    packageIndex++;
+                    valueBinary = "";
+                }
+                S = ToArray(sString);
+                int[] f = Permute(S, P, 32);
+
+                for (int j = 0; j < R.Length; j++)
+                {
+                    R[j] = Lprev[j] ^ f[j];
+                }
+
+                Lprev = L;
+                Rprev = R;
+            }
+
+            int[] finalRL = Permute(Rprev.Concat(Lprev).ToArray(), IP_1, 64);
+            string hexDecriptedM = BinToHex(FromArrayToString(finalRL));
+
+            return hexDecriptedM;
+        }
     }
 }
