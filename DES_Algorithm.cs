@@ -149,6 +149,12 @@ namespace DES
             return binary;
         }
 
+        private static string BinToHex(string binary)
+        {
+            return string.Join("", Enumerable.Range(0, binary.Length / 4)
+                .Select(i => Convert.ToByte(binary.Substring(i * 4, 4), 2).ToString("X")));
+        }
+
         // Returns permutated array with specified size based on array with permutation rule
         private static int[] Permute(int[] toPermute, int[] permutationRule, int outputSize)
         {
@@ -221,8 +227,24 @@ namespace DES
         public static string Encoding(string message, string key)
         {
             // Convert hexadecimal string input to binary int array
-            int[] binaryMessage = ToArray(HexToBin4Bit(message)), // M
-                binaryKey = ToArray(HexToBin4Bit(key)); // K
+            int[] binaryMessage = new int[64], 
+                binaryKey = new int[64];
+
+            binaryMessage = ToArray(HexToBin4Bit(message)); // M
+            binaryKey = ToArray(HexToBin4Bit(key)); // K
+
+            //// Fill array with bits 
+            //if (binaryMessage.Length < 64)
+            //{
+            //    binaryMessage = binaryMessage.Append(1).ToArray();
+            //    while (binaryMessage.Length != 64)
+            //    {
+            //        binaryMessage = binaryMessage.Append(0).ToArray();
+            //    }
+            //}
+
+            //if (binaryKey.Length < 64)
+            //    return null;
 
             int[] key56B = Permute(binaryKey, PC_1, 56); // 56-bit long permutated key (K+)
 
@@ -291,11 +313,21 @@ namespace DES
                     valueBinary = "";
                 }
                 S = ToArray(sString);
+                int[] f = Permute(S, P, 32);
 
-                // R = L + .... 
+                for(int j = 0; j < R.Length; j++)
+                {
+                    R[j] = Lprev[j] ^ f[j];
+                }
+
+                Lprev = L;
+                Rprev = R;
             }
 
-            return null;
+            int[] finalRL = Permute(Rprev.Concat(Lprev).ToArray(), IP_1, 64);
+            string hexEncriptedM = BinToHex(FromArrayToString(finalRL));
+
+            return hexEncriptedM;
         }
     }
 }
