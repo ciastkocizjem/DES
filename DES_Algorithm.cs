@@ -224,24 +224,31 @@ namespace DES
 
         #endregion
 
-        public static string Encoding(string message, string key)
+        public static string Encoding(string message, string key, bool binHex)
         {
             // Convert hexadecimal string input to binary int array
             int[] binaryMessage = new int[64], 
                 binaryKey = new int[64];
 
-            binaryMessage = ToArray(HexToBin4Bit(message)); // M
+            if (binHex) // bin - true, hex - false
+            {
+                binaryMessage = ToArray(message);   // M
+            }
+            else
+            {
+                binaryMessage = ToArray(HexToBin4Bit(message)); // M
+            }
             binaryKey = ToArray(HexToBin4Bit(key)); // K
 
-            //// Fill array with bits 
-            //if (binaryMessage.Length < 64)
-            //{
-            //    binaryMessage = binaryMessage.Append(1).ToArray();
-            //    while (binaryMessage.Length != 64)
-            //    {
-            //        binaryMessage = binaryMessage.Append(0).ToArray();
-            //    }
-            //}
+            // Fill array with bits 
+            if (binaryMessage.Length < 64)
+            {
+                binaryMessage = binaryMessage.Append(1).ToArray();
+                while (binaryMessage.Length != 64)
+                {
+                    binaryMessage = binaryMessage.Append(0).ToArray();
+                }
+            }
 
             //if (binaryKey.Length < 64)
             //    return null;
@@ -330,27 +337,21 @@ namespace DES
             return hexEncriptedM;
         }
 
-        public static string Decoding(string message, string key)
+        public static string Decoding(string message, string key, bool binHex)
         {
             // Convert hexadecimal string input to binary int array
             int[] binaryMessage = new int[64],
                 binaryKey = new int[64];
 
-            binaryMessage = ToArray(HexToBin4Bit(message)); // M
+            if (binHex) // bin - true, hex - false
+            {
+                binaryMessage = ToArray(message);   // M
+            }
+            else
+            {
+                binaryMessage = ToArray(HexToBin4Bit(message)); // M
+            }
             binaryKey = ToArray(HexToBin4Bit(key)); // K
-
-            //// Fill array with bits 
-            //if (binaryMessage.Length < 64)
-            //{
-            //    binaryMessage = binaryMessage.Append(1).ToArray();
-            //    while (binaryMessage.Length != 64)
-            //    {
-            //        binaryMessage = binaryMessage.Append(0).ToArray();
-            //    }
-            //}
-
-            //if (binaryKey.Length < 64)
-            //    return null;
 
             int[] key56B = Permute(binaryKey, PC_1, 56); // 56-bit long permutated key (K+)
 
@@ -432,6 +433,8 @@ namespace DES
 
             int[] finalRL = Permute(Rprev.Concat(Lprev).ToArray(), IP_1, 64);
             string hexDecriptedM = BinToHex(FromArrayToString(finalRL));
+
+            hexDecriptedM = hexDecriptedM.Remove(hexDecriptedM.LastIndexOf("80"), hexDecriptedM.Length - hexDecriptedM.LastIndexOf("80"));
 
             return hexDecriptedM;
         }

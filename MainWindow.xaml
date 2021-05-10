@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:DES"
         mc:Ignorable="d"
-        Title="BSK — DES"  Width="400" SizeToContent="Height">
+        Title="Szyfromator"  Width="400" SizeToContent="Height">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
@@ -27,7 +27,7 @@
 
         <GroupBox Header="Base" Grid.Row="1" Grid.Column="1" Margin="5" Padding="5">
             <StackPanel>
-                <RadioButton Content="HEX" Name="hexRadioButton" Margin="5"/>
+                <RadioButton Content="HEX" Name="hexRadioButton" Margin="5" IsChecked="True"/>
                 <RadioButton Content="BIN" Name="binRadioButton" Margin="5"/>
             </StackPanel>
         </GroupBox>
@@ -35,8 +35,8 @@
         <Label Content="Key" Grid.Row="2" Grid.Column="0" Margin="5" Padding="5"/>
         <TextBox Grid.Row="2" Grid.Column="1" Name="keyTextBox" Margin="5" Padding="5"/>
 
-        <Button Content="Decrypt" Grid.Column="1" Grid.Row="3" Name="decryptButton" Margin="5" Padding="5" HorizontalAlignment="Right" Click="DecryptButton_Click"/>
-        <Button Content="Encrypt" Grid.Column="2" Grid.Row="3" Name="encryptButton" Margin="5" Padding="5" Click="EncryptButton_Click"/>
+        <Button Content="Encrypt" Grid.Column="1" Grid.Row="3" Name="decryptButton" Margin="5" Padding="5" HorizontalAlignment="Right" Click="EncryptButton_Click"/>
+        <Button Content="Decrypt" Grid.Column="2" Grid.Row="3" Name="encryptButton" Margin="5" Padding="5" Click="DecryptButton_Click"/>
 
         <Label Content="Output" Grid.Row="4" Grid.Column="0" Margin="5" Padding="5"/>
         <TextBox Grid.Row="4" Grid.Column="1" Name="outputTextBox" Margin="5" Padding="5"/>

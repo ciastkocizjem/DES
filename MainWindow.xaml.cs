@@ -25,9 +25,6 @@ namespace DES
         public MainWindow()
         {
             InitializeComponent();
-
-            DES_Algorithm.Encoding("AAAAAAAAAAAAAAAB", "1111111111111111");
-            DES_Algorithm.Decoding("BC3E28BB3BB99565", "1111111111111111");
         }
 
         private void LoadButton_Click(object sender, RoutedEventArgs e)
@@ -37,16 +34,53 @@ namespace DES
                 Filter = "Binary files (*.bin)|*.bin"
             };
             if (openFileDialog.ShowDialog() == true) inputTextBox.Text = File.ReadAllText(openFileDialog.FileName);
-        }
-
-        private void DecryptButton_Click(object sender, RoutedEventArgs e)
-        {
-
+            if (binRadioButton.IsChecked == false)
+                binRadioButton.IsChecked = true;
         }
 
         private void EncryptButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!string.IsNullOrWhiteSpace(inputTextBox.Text) && !string.IsNullOrWhiteSpace(keyTextBox.Text))
+            {
+                if (keyTextBox.Text.Length == 16)
+                {
+                    if (binRadioButton.IsChecked == true)
+                    {
+                        outputTextBox.Text = DES_Algorithm.Encoding(inputTextBox.Text, keyTextBox.Text, true);
+                    }
+                    else
+                    {
+                        outputTextBox.Text = DES_Algorithm.Encoding(inputTextBox.Text, keyTextBox.Text, false);
+                    }
+                }
+                else
+                {
+                    outputTextBox.Text = "Key must be 16 characters long";
+                }
+            }
+        }
 
+        private void DecryptButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(inputTextBox.Text) && !string.IsNullOrWhiteSpace(keyTextBox.Text) && keyTextBox.Text.Length == 16)
+            {
+                if (keyTextBox.Text.Length == 16)
+                {
+                    if (binRadioButton.IsChecked == true)
+                    {
+                        outputTextBox.Text = DES_Algorithm.Decoding(inputTextBox.Text, keyTextBox.Text, true);
+                    }
+                    else
+                    {
+                        outputTextBox.Text = DES_Algorithm.Decoding(inputTextBox.Text, keyTextBox.Text, false);
+                    }
+
+                }
+                else
+                {
+                    outputTextBox.Text = "Key must be 16 characters long";
+                }
+            }
         }
     }
 }
