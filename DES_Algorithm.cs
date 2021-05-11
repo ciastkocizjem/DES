@@ -285,139 +285,171 @@ namespace DES
         public static string Encoding(string message, string key, bool binHex)
         {
             // Convert hexadecimal string input to binary int array or binary string to binary int array
-            int[] binaryMessage = new int[64], 
+            int[] binaryMsg = new int[64], 
                 binaryKey = new int[64];
 
             if (binHex) // bin - true, hex - false
             {
-                binaryMessage = ToArray(message);   // M
+                binaryMsg = ToArray(message);   // M
             }
             else
             {
-                binaryMessage = ToArray(HexToBin4Bit(message)); // M
+                binaryMsg = ToArray(HexToBin4Bit(message)); // M
             }
             binaryKey = ToArray(HexToBin4Bit(key)); // K
-
-            // Fill array with bits 
-            if (binaryMessage.Length < 64)
-            {
-                binaryMessage = binaryMessage.Append(1).ToArray();
-                while (binaryMessage.Length != 64)
-                {
-                    binaryMessage = binaryMessage.Append(0).ToArray();
-                }
-            }
 
             // Generate keys
             List<int[]> joinedPermutatedKeys = GeneratePermutatedKeys(binaryKey);
 
-            int[] messageIP = Permute(binaryMessage, IP, 64);  // 64-bit long permutated message 
-
-            // Splitting message into two 32-bit arrays
-            int[] Lprev = new int[32],  // Ln-1 (initially L0)
-                Rprev = new int[32];    // Rn-1 (initially R0)
-            SplitArray(messageIP, out Lprev, out Rprev);
-
-            int[] E = new int[48]; // E(Rn-1)
-            // Processing message
-            for (int i = 0; i < 16; i++)
+            // Split message into parts 64-bit each
+            List<int[]> messageParts = new List<int[]>();
+            for (int i = 0; i < binaryMsg.Length; i+=64)
             {
-                int[] L = new int[32], R = new int[32], xored = new int[48]; // Kn+E(Rn-1)
-                L = Rprev;
-
-                // Permuting E(Rn-1)
-                E = Permute(L, EBit_Selection, 48);
-
-                // Xoring E(Rn-1) with Kn
-                for (int j = 0; j < E.Length; j++)
+                int[] part = new int[(binaryMsg.Length - i) < 64 ? binaryMsg.Length - i : 64];
+                Array.Copy(binaryMsg, i, part, 0, (binaryMsg.Length - i) < 64 ? binaryMsg.Length - i : 64);
+                messageParts.Add(part);
+            }
+            if (binaryMsg.Length % 64 != 0)
+            {
+                int[] last = messageParts.Last();
+                last = last.Append(1).ToArray();
+                while (last.Length != 64)
                 {
-                    xored[j] = E[j] ^ joinedPermutatedKeys.ElementAt(i)[j];
+                    last = last.Append(0).ToArray();
                 }
-
-                int[] S = new int[32]; // xored after converting based on Sn tables
-                S = ConvertXoredTo32Bits(xored);
-                int[] f = Permute(S, P, 32);
-
-                for(int j = 0; j < R.Length; j++)
-                {
-                    R[j] = Lprev[j] ^ f[j];
-                }
-
-                Lprev = L;
-                Rprev = R;
+                messageParts.RemoveAt(messageParts.Count - 1);
+                messageParts.Add(last);
             }
 
-            int[] finalRL = Permute(Rprev.Concat(Lprev).ToArray(), IP_1, 64);
-            string hexEncriptedM = BinToHex(FromArrayToString(finalRL));
+            StringBuilder sb = new StringBuilder();
 
-            return hexEncriptedM;
+            foreach(int[] binaryMessage in messageParts)
+            {
+                int[] messageIP = Permute(binaryMessage, IP, 64);  // 64-bit long permutated message 
+
+                // Splitting message into two 32-bit arrays
+                int[] Lprev = new int[32],  // Ln-1 (initially L0)
+                    Rprev = new int[32];    // Rn-1 (initially R0)
+                SplitArray(messageIP, out Lprev, out Rprev);
+
+                int[] E = new int[48]; // E(Rn-1)
+                // Processing message
+                for (int i = 0; i < 16; i++)
+                {
+                    int[] L = new int[32], R = new int[32], xored = new int[48]; // Kn+E(Rn-1)
+                    L = Rprev;
+
+                    // Permuting E(Rn-1)
+                    E = Permute(L, EBit_Selection, 48);
+
+                    // Xoring E(Rn-1) with Kn
+                    for (int j = 0; j < E.Length; j++)
+                    {
+                        xored[j] = E[j] ^ joinedPermutatedKeys.ElementAt(i)[j];
+                    }
+
+                    int[] S = new int[32]; // xored after converting based on Sn tables
+                    S = ConvertXoredTo32Bits(xored);
+                    int[] f = Permute(S, P, 32);
+
+                    for(int j = 0; j < R.Length; j++)
+                    {
+                        R[j] = Lprev[j] ^ f[j];
+                    }
+
+                    Lprev = L;
+                    Rprev = R;
+                }
+
+                int[] finalRL = Permute(Rprev.Concat(Lprev).ToArray(), IP_1, 64);
+                string hexEncriptedM = BinToHex(FromArrayToString(finalRL));
+                sb.Append(hexEncriptedM);
+            }
+            
+            return sb.ToString();
         }
 
         public static string Decoding(string message, string key, bool binHex)
         {
-            // Convert hexadecimal string input to binary int array
-            int[] binaryMessage = new int[64],
+            // Convert hexadecimal string input to binary int array or binary string to binary int array
+            int[] binaryMsg = new int[64],
                 binaryKey = new int[64];
 
             if (binHex) // bin - true, hex - false
             {
-                binaryMessage = ToArray(message);   // M
+                binaryMsg = ToArray(message);   // M
             }
             else
             {
-                binaryMessage = ToArray(HexToBin4Bit(message)); // M
+                binaryMsg = ToArray(HexToBin4Bit(message)); // M
             }
             binaryKey = ToArray(HexToBin4Bit(key)); // K
 
             // Generate keys
             List<int[]> joinedPermutatedKeys = GeneratePermutatedKeys(binaryKey);
 
-            int[] messageIP = Permute(binaryMessage, IP, 64);  // 64-bit long permutated message 
-
-            // Splitting message into two 32-bit arrays
-            int[] Lprev = new int[32],  // Ln-1 (initially L0)
-                Rprev = new int[32];    // Rn-1 (initially R0)
-            SplitArray(messageIP, out Lprev, out Rprev);
-
-            int[] E = new int[48]; // E(Rn-1)
-            for (int i = 15; i >= 0; i--)
+            // Split message into parts 64-bit each
+            List<int[]> messageParts = new List<int[]>();
+            for (int i = 0; i < binaryMsg.Length; i += 64)
             {
-                int[] L = new int[32], R = new int[32], xored = new int[48]; // Kn+E(Rn-1)
-                L = Rprev;
-
-                // Permuting E(Rn-1)
-                E = Permute(L, EBit_Selection, 48);
-
-                // Xoring E(Rn-1) with Kn
-                for (int j = 0; j < E.Length; j++)
-                {
-                    xored[j] = E[j] ^ joinedPermutatedKeys.ElementAt(i)[j];
-                }
-
-                int[] S = new int[32]; // xored after converting based on Sn tables
-                S = ConvertXoredTo32Bits(xored);
-                int[] f = Permute(S, P, 32);
-
-                for (int j = 0; j < R.Length; j++)
-                {
-                    R[j] = Lprev[j] ^ f[j];
-                }
-
-                Lprev = L;
-                Rprev = R;
+                int[] part = new int[64];
+                Array.Copy(binaryMsg, i, part, 0, (binaryMsg.Length - i) < 64 ? binaryMsg.Length - i : 64);
+                messageParts.Add(part);
             }
 
-            int[] finalRL = Permute(Rprev.Concat(Lprev).ToArray(), IP_1, 64);
-            string hexDecriptedM = BinToHex(FromArrayToString(finalRL));
+            StringBuilder sb = new StringBuilder();
 
-            // Check if encrypted block has padding and delete it
-            if (hexDecriptedM.LastIndexOf("80") > -1)
+            foreach (int[] binaryMessage in messageParts)
             {
-                int indexOf80 = hexDecriptedM.LastIndexOf("80");
-                hexDecriptedM = hexDecriptedM.Remove(indexOf80, hexDecriptedM.Length - indexOf80);
+                int[] messageIP = Permute(binaryMessage, IP, 64);  // 64-bit long permutated message 
+
+                // Splitting message into two 32-bit arrays
+                int[] Lprev = new int[32],  // Ln-1 (initially L0)
+                    Rprev = new int[32];    // Rn-1 (initially R0)
+                SplitArray(messageIP, out Lprev, out Rprev);
+
+                int[] E = new int[48]; // E(Rn-1)
+                // Processing message
+                for (int i = 15; i >= 0; i--)
+                {
+                    int[] L = new int[32], R = new int[32], xored = new int[48]; // Kn+E(Rn-1)
+                    L = Rprev;
+
+                    // Permuting E(Rn-1)
+                    E = Permute(L, EBit_Selection, 48);
+
+                    // Xoring E(Rn-1) with Kn
+                    for (int j = 0; j < E.Length; j++)
+                    {
+                        xored[j] = E[j] ^ joinedPermutatedKeys.ElementAt(i)[j];
+                    }
+
+                    int[] S = new int[32]; // xored after converting based on Sn tables
+                    S = ConvertXoredTo32Bits(xored);
+                    int[] f = Permute(S, P, 32);
+
+                    for (int j = 0; j < R.Length; j++)
+                    {
+                        R[j] = Lprev[j] ^ f[j];
+                    }
+
+                    Lprev = L;
+                    Rprev = R;
+                }
+
+                int[] finalRL = Permute(Rprev.Concat(Lprev).ToArray(), IP_1, 64);
+                string hexDecriptedM = BinToHex(FromArrayToString(finalRL));
+
+                // Check if encrypted block has padding and delete it
+                if (hexDecriptedM.LastIndexOf("80") > -1)
+                {
+                    int indexOf80 = hexDecriptedM.LastIndexOf("80");
+                    hexDecriptedM = hexDecriptedM.Remove(indexOf80, hexDecriptedM.Length - indexOf80);
+                }
+                sb.Append(hexDecriptedM);
             }
 
-            return hexDecriptedM;
+            return sb.ToString();
         }
     }
 }
